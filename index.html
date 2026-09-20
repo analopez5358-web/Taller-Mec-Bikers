@@ -4,65 +4,164 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Taller de Motos</title>
-    <!-- Tailwind CSS para un diseño rápido y limpio -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 font-sans">
 
-    <div class="container mx-auto p-4 max-w-4xl">
-        <header class="bg-blue-600 text-white p-4 rounded-lg shadow-md mb-6 flex justify-between items-center">
-            <h1 class="text-xl font-bold">🏍️ Taller de Motos - Control</h1>
-            <span id="fecha-actual" class="text-sm"></span>
+    <div class="container mx-auto p-4 max-w-5xl">
+        <!-- Encabezado y Menú -->
+        <header class="bg-blue-600 text-white p-4 rounded-lg shadow-md mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-xl font-bold">🏍️ Taller de Motos - Control</h1>
+                <span id="fecha-actual" class="text-sm opacity-90"></span>
+            </div>
+            <!-- Menú de Navegación -->
+            <nav class="flex gap-2 bg-blue-700 p-1 rounded-lg">
+                <button onclick="cambiarSeccion('dashboard')" id="btn-dashboard" class="px-4 py-2 rounded-md font-semibold text-sm bg-white text-blue-600 shadow transition">📊 Inicio / Dashboard</button>
+                <button onclick="cambiarSeccion('ordenes')" id="btn-ordenes" class="px-4 py-2 rounded-md font-semibold text-sm text-white hover:bg-blue-600 transition">🔧 Órdenes</button>
+            </nav>
         </header>
 
-        <!-- Formulario de Ingreso -->
-        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-            <h2 class="text-lg font-semibold mb-4 text-gray-700">Nueva Orden de Ingreso</h2>
-            <form id="form-orden" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-600">Nombre del Cliente</label>
-                    <input type="text" id="cliente" required class="w-full mt-1 p-2 border rounded-md focus:ring focus:ring-blue-300">
+        <!-- SECCIÓN 1: DASHBOARD -->
+        <section id="seccion-dashboard" class="space-y-6">
+            <h2 class="text-xl font-bold text-gray-700">Resumen del Taller</h2>
+            
+            <!-- Tarjetas de Indicadores -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-lg shadow-md border-l-4 border-green-500">
+                    <p class="text-sm text-gray-500 font-medium">Ingresos de Hoy</p>
+                    <p id="stat-ingresos-hoy" class="text-2xl font-bold text-gray-800 mt-1">L. 0.00</p>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-600">Teléfono / WhatsApp</label>
-                    <input type="tel" id="telefono" required class="w-full mt-1 p-2 border rounded-md focus:ring focus:ring-blue-300">
+                <div class="bg-white p-5 rounded-lg shadow-md border-l-4 border-blue-500">
+                    <p class="text-sm text-gray-500 font-medium">Ingresos del Mes</p>
+                    <p id="stat-ingresos-mes" class="text-2xl font-bold text-gray-800 mt-1">L. 0.00</p>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-600">Moto (Marca y Modelo)</label>
-                    <input type="text" id="moto" required class="w-full mt-1 p-2 border rounded-md focus:ring focus:ring-blue-300" placeholder="Ej. Honda CB125">
+                <div class="bg-white p-5 rounded-lg shadow-md border-l-4 border-yellow-500">
+                    <p class="text-sm text-gray-500 font-medium">En Reparación</p>
+                    <p id="stat-en-reparacion" class="text-2xl font-bold text-gray-800 mt-1">0</p>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-600">Placa</label>
-                    <input type="text" id="placa" required class="w-full mt-1 p-2 border rounded-md focus:ring focus:ring-blue-300">
+                <div class="bg-white p-5 rounded-lg shadow-md border-l-4 border-purple-500">
+                    <p class="text-sm text-gray-500 font-medium">Listos para Entregar</p>
+                    <p id="stat-listos" class="text-2xl font-bold text-gray-800 mt-1">0</p>
                 </div>
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-600">Falla Reportada / Trabajo a Realizar</label>
-                    <textarea id="falla" rows="2" required class="w-full mt-1 p-2 border rounded-md focus:ring focus:ring-blue-300"></textarea>
+            </div>
+
+            <!-- Comparativa y Accesos Rápidos -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-700">📈 Comparativa Mensual</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                <span id="label-mes-actual">Mes Actual</span>
+                                <span id="val-mes-actual" class="font-bold">L. 0</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-3">
+                                <div id="bar-mes-actual" class="bg-blue-600 h-3 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                <span id="label-mes-anterior">Mes Anterior</span>
+                                <span id="val-mes-anterior" class="font-bold">L. 0</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-3">
+                                <div id="bar-mes-anterior" class="bg-gray-400 h-3 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="md:col-span-2">
-                    <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded-md font-semibold hover:bg-blue-700 transition">
-                        Guardar e Ingresar Moto
+
+                <div class="bg-white p-6 rounded-lg shadow-md flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2 text-gray-700">🚀 Acceso Rápido</h3>
+                        <p class="text-sm text-gray-500 mb-4">Registra una nueva moto rápidamente o cambia el estado de las órdenes activas.</p>
+                    </div>
+                    <button onclick="cambiarSeccion('ordenes')" class="w-full bg-blue-600 text-white p-3 rounded-md font-semibold hover:bg-blue-700 transition text-center">
+                        Ir a Gestión de Órdenes ➔
                     </button>
                 </div>
-            </form>
-        </div>
-
-        <!-- Listado de Órdenes Activas -->
-        <div class="bg-white p-6 rounded-lg shadow-md">
-            <h2 class="text-lg font-semibold mb-4 text-gray-700">Motos en Taller</h2>
-            <div id="lista-ordenes" class="space-y-4">
-                <!-- Aquí se cargan dinámicamente las órdenes -->
             </div>
-        </div>
+        </section>
+
+        <!-- SECCIÓN 2: GESTIÓN DE ÓRDENES (Formulario + Listado) -->
+        <section id="seccion-ordenes" class="hidden space-y-6">
+            <!-- Formulario de Ingreso -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-lg font-semibold mb-4 text-gray-700">Nueva Orden de Ingreso</h2>
+                <form id="form-orden" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600">Nombre del Cliente</label>
+                        <input type="text" id="cliente" required class="w-full mt-1 p-2 border rounded-md focus:ring focus:ring-blue-300">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600">Teléfono / WhatsApp</label>
+                        <input type="tel" id="telefono" required class="w-full mt-1 p-2 border rounded-md focus:ring focus:ring-blue-300">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600">Moto (Marca y Modelo)</label>
+                        <input type="text" id="moto" required class="w-full mt-1 p-2 border rounded-md focus:ring focus:ring-blue-300" placeholder="Ej. Honda CB125">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600">Placa</label>
+                        <input type="text" id="placa" required class="w-full mt-1 p-2 border rounded-md focus:ring focus:ring-blue-300">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600">Costo Estimado / Total (Lempiras)</label>
+                        <input type="number" id="costo" step="0.01" required class="w-full mt-1 p-2 border rounded-md focus:ring focus:ring-blue-300" placeholder="0.00">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-600">Falla Reportada / Trabajo a Realizar</label>
+                        <textarea id="falla" rows="2" required class="w-full mt-1 p-2 border rounded-md focus:ring focus:ring-blue-300"></textarea>
+                    </div>
+                    <div class="md:col-span-2">
+                        <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded-md font-semibold hover:bg-blue-700 transition">
+                            Guardar e Ingresar Moto
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Listado de Órdenes Activas -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-lg font-semibold mb-4 text-gray-700">Motos en Taller</h2>
+                <div id="lista-ordenes" class="space-y-4">
+                    <!-- Se cargan dinámicamente -->
+                </div>
+            </div>
+        </section>
     </div>
 
     <script>
-        // Mostrar fecha actual
-        document.getElementById('fecha-actual').innerText = new Date().toLocaleDateString();
+        document.getElementById('fecha-actual').innerText = new Date().toLocaleDateString('es-HN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-        // Cargar órdenes guardadas al iniciar
-        document.addEventListener('DOMContentLoaded', mostrarOrdenes);
+        document.addEventListener('DOMContentLoaded', () => {
+            actualizarDashboard();
+            mostrarOrdenes();
+        });
 
+        // Control de pestañas del menú
+        function cambiarSeccion(seccion) {
+            const secDashboard = document.getElementById('seccion-dashboard');
+            const secOrdenes = document.getElementById('seccion-ordenes');
+            const btnDash = document.getElementById('btn-dashboard');
+            const btnOrd = document.getElementById('btn-ordenes');
+
+            if (seccion === 'dashboard') {
+                secDashboard.classList.remove('hidden');
+                secOrdenes.classList.add('hidden');
+                btnDash.className = "px-4 py-2 rounded-md font-semibold text-sm bg-white text-blue-600 shadow transition";
+                btnOrd.className = "px-4 py-2 rounded-md font-semibold text-sm text-white hover:bg-blue-600 transition";
+                actualizarDashboard();
+            } else {
+                secDashboard.classList.add('hidden');
+                secOrdenes.classList.remove('hidden');
+                btnOrd.className = "px-4 py-2 rounded-md font-semibold text-sm bg-white text-blue-600 shadow transition";
+                btnDash.className = "px-4 py-2 rounded-md font-semibold text-sm text-white hover:bg-blue-600 transition";
+            }
+        }
+
+        // Guardar nueva orden
         document.getElementById('form-orden').addEventListener('submit', function(e) {
             e.preventDefault();
 
@@ -72,9 +171,11 @@
                 telefono: document.getElementById('telefono').value,
                 moto: document.getElementById('moto').value,
                 placa: document.getElementById('placa').value.toUpperCase(),
+                costo: parseFloat(document.getElementById('costo').value) || 0,
                 falla: document.getElementById('falla').value,
                 estado: 'Pendiente',
-                fecha: new Date().toLocaleDateString()
+                fechaIso: new Date().toISOString(), // Para cálculos precisos de fechas
+                fecha: new Date().toLocaleDateString('es-HN')
             };
 
             let ordenes = JSON.parse(localStorage.getItem('taller_ordenes')) || [];
@@ -83,6 +184,8 @@
 
             document.getElementById('form-orden').reset();
             mostrarOrdenes();
+            actualizarDashboard();
+            cambiarSeccion('dashboard'); // Al registrar, te lleva al dashboard para ver el resumen
         });
 
         function mostrarOrdenes() {
@@ -90,24 +193,29 @@
             let ordenes = JSON.parse(localStorage.getItem('taller_ordenes')) || [];
 
             if (ordenes.length === 0) {
-                contenedor.innerHTML = '<p class="text-gray-500 text-center">No hay motos registradas en este momento.</p>';
+                contenedor.innerHTML = '<p class="text-gray-500 text-center py-4">No hay motos registradas en este momento.</p>';
                 return;
             }
 
             contenedor.innerHTML = '';
             ordenes.forEach(orden => {
+                let badgeColor = 'bg-yellow-100 text-yellow-800';
+                if (orden.estado === 'En Reparación') badgeColor = 'bg-blue-100 text-blue-800';
+                if (orden.estado === 'Lista para Entregar') badgeColor = 'bg-green-100 text-green-800';
+
                 contenedor.innerHTML += `
                     <div class="border p-4 rounded-lg flex flex-col md:flex-row justify-between items-start md:items-center bg-gray-50 gap-4">
                         <div>
-                            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded font-semibold">${orden.estado}</span>
+                            <span class="text-xs ${badgeColor} px-2 py-1 rounded font-semibold">${orden.estado}</span>
                             <h3 class="font-bold text-lg mt-1">${orden.moto} (Placa: ${orden.placa})</h3>
                             <p class="text-sm text-gray-600"><strong>Cliente:</strong> ${orden.cliente} - 📱 ${orden.telefono}</p>
-                            <p class="text-sm text-gray-700 mt-1"><strong>Falla:</strong> ${orden.falla}</p>
+                            <p class="text-sm text-gray-700 mt-1"><strong>Trabajo:</strong> ${orden.falla}</p>
+                            <p class="text-sm text-gray-800 mt-1"><strong>Costo:</strong> L. ${orden.costo.toFixed(2)}</p>
                             <span class="text-xs text-gray-400">Ingreso: ${orden.fecha}</span>
                         </div>
-                        <div class="flex gap-2 w-full md:w-auto">
-                            <button onclick="cambiarEstado(${orden.id})" class="flex-1 md:flex-none bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600">Cambiar Estado</button>
-                            <button onclick="eliminarOrden(${orden.id})" class="flex-1 md:flex-none bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">Eliminar</button>
+                        <div class="flex flex-col gap-2 w-full md:w-auto">
+                            <button onclick="cambiarEstado(${orden.id})" class="bg-yellow-500 text-white px-3 py-1.5 rounded text-sm hover:bg-yellow-600 transition">Cambiar Estado</button>
+                            <button onclick="eliminarOrden(${orden.id})" class="bg-red-500 text-white px-3 py-1.5 rounded text-sm hover:bg-red-600 transition">Eliminar</button>
                         </div>
                     </div>
                 `;
@@ -126,6 +234,7 @@
             });
             localStorage.setItem('taller_ordenes', JSON.stringify(ordenes));
             mostrarOrdenes();
+            actualizarDashboard();
         }
 
         function eliminarOrden(id) {
@@ -134,7 +243,76 @@
                 ordenes = ordenes.filter(orden => orden.id !== id);
                 localStorage.setItem('taller_ordenes', JSON.stringify(ordenes));
                 mostrarOrdenes();
+                actualizarDashboard();
             }
+        }
+
+        // Lógica del Dashboard y métricas
+        function actualizarDashboard() {
+            let ordenes = JSON.parse(localStorage.getItem('taller_ordenes')) || [];
+            
+            const hoyStr = new Date().toISOString().split('T')[0];
+            const fechaActualObj = new Date();
+            const mesActual = fechaActualObj.getMonth();
+            const anioActual = fechaActualObj.getFullYear();
+
+            let ingresosHoy = 0;
+            let ingresosMes = 0;
+            let ingresosMesAnterior = 0;
+            let enReparacion = 0;
+            let listos = 0;
+
+            ordenes.forEach(orden => {
+                // Contar estados
+                if (orden.estado === 'En Reparación' || orden.estado === 'Pendiente') {
+                    enReparacion++;
+                } else if (orden.estado === 'Lista para Entregar') {
+                    listos++;
+                }
+
+                // Calcular ingresos por fechas
+                if (orden.fechaIso) {
+                    const fechaOrden = new Date(orden.fechaIso);
+                    const ordenDiaStr = orden.fechaIso.split('T')[0];
+
+                    if (ordenDiaStr === hoyStr) {
+                        ingresosHoy += orden.costo;
+                    }
+
+                    if (fechaOrden.getMonth() === mesActual && fechaOrden.getFullYear() === anioActual) {
+                        ingresosMes += orden.costo;
+                    } else if (
+                        (fechaOrden.getMonth() === mesActual - 1 && fechaOrden.getFullYear() === anioActual) ||
+                        (mesActual === 0 && fechaOrden.getMonth() === 11 && fechaOrden.getFullYear() === anioActual - 1)
+                    ) {
+                        ingresosMesAnterior += orden.costo;
+                    }
+                }
+            });
+
+            // Mostrar en pantalla
+            document.getElementById('stat-ingresos-hoy').innerText = `L. ${ingresosHoy.toFixed(2)}`;
+            document.getElementById('stat-ingresos-mes').innerText = `L. ${ingresosMes.toFixed(2)}`;
+            document.getElementById('stat-en-reparacion').innerText = enReparacion;
+            document.getElementById('stat-listos').innerText = listos;
+
+            // Comparativa Mensual
+            const nombresMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            const mesAnteriorIndex = mesActual === 0 ? 11 : mesActual - 1;
+
+            document.getElementById('label-mes-actual').innerText = nombresMeses[mesActual];
+            document.getElementById('val-mes-actual').innerText = `L. ${ingresosMes.toFixed(2)}`;
+
+            document.getElementById('label-mes-anterior').innerText = nombresMeses[mesAnteriorIndex];
+            document.getElementById('val-mes-anterior').innerText = `L. ${ingresosMesAnterior.toFixed(2)}`;
+
+            // Calcular porcentajes visuales para las barras
+            let maxTotal = Math.max(ingresosMes, ingresosMesAnterior, 1);
+            let porcActual = (ingresosMes / maxTotal) * 100;
+            let porcAnterior = (ingresosMesAnterior / maxTotal) * 100;
+
+            document.getElementById('bar-mes-actual').style.width = `${porcActual}%`;
+            document.getElementById('bar-mes-anterior').style.width = `${porcAnterior}%`;
         }
     </script>
 </body>
