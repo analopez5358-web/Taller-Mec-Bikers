@@ -75,7 +75,7 @@
                 <div class="bg-white p-6 rounded-lg shadow-md flex flex-col justify-between">
                     <div>
                         <h3 class="text-lg font-semibold mb-2 text-gray-700">🚀 Acceso Rápido</h3>
-                        <p class="text-sm text-gray-500 mb-4">Registra una nueva moto rápidamente o cambia el estado de las órdenes activas.</p>
+                        <p class="text-sm text-gray-500 mb-4">Registra una nueva moto rápidamente o gestiona las órdenes activas en el taller.</p>
                     </div>
                     <button onclick="cambiarSeccion('ordenes')" class="w-full bg-blue-600 text-white p-3 rounded-md font-semibold hover:bg-blue-700 transition text-center">
                         Ir a Gestión de Órdenes ➔
@@ -158,6 +158,7 @@
                 secOrdenes.classList.remove('hidden');
                 btnOrd.className = "px-4 py-2 rounded-md font-semibold text-sm bg-white text-blue-600 shadow transition";
                 btnDash.className = "px-4 py-2 rounded-md font-semibold text-sm text-white hover:bg-blue-600 transition";
+                mostrarOrdenes(); // Asegura que se carguen al entrar a la sección
             }
         }
 
@@ -174,7 +175,7 @@
                 costo: parseFloat(document.getElementById('costo').value) || 0,
                 falla: document.getElementById('falla').value,
                 estado: 'Pendiente',
-                fechaIso: new Date().toISOString(), // Para cálculos precisos de fechas
+                fechaIso: new Date().toISOString(),
                 fecha: new Date().toLocaleDateString('es-HN')
             };
 
@@ -185,7 +186,9 @@
             document.getElementById('form-orden').reset();
             mostrarOrdenes();
             actualizarDashboard();
-            cambiarSeccion('dashboard'); // Al registrar, te lleva al dashboard para ver el resumen
+            
+            // Cambiar a la sección de órdenes para ver la moto recién agregada inmediatamente
+            cambiarSeccion('ordenes');
         });
 
         function mostrarOrdenes() {
@@ -263,14 +266,12 @@
             let listos = 0;
 
             ordenes.forEach(orden => {
-                // Contar estados
                 if (orden.estado === 'En Reparación' || orden.estado === 'Pendiente') {
                     enReparacion++;
                 } else if (orden.estado === 'Lista para Entregar') {
                     listos++;
                 }
 
-                // Calcular ingresos por fechas
                 if (orden.fechaIso) {
                     const fechaOrden = new Date(orden.fechaIso);
                     const ordenDiaStr = orden.fechaIso.split('T')[0];
@@ -290,13 +291,11 @@
                 }
             });
 
-            // Mostrar en pantalla
             document.getElementById('stat-ingresos-hoy').innerText = `L. ${ingresosHoy.toFixed(2)}`;
             document.getElementById('stat-ingresos-mes').innerText = `L. ${ingresosMes.toFixed(2)}`;
             document.getElementById('stat-en-reparacion').innerText = enReparacion;
             document.getElementById('stat-listos').innerText = listos;
 
-            // Comparativa Mensual
             const nombresMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
             const mesAnteriorIndex = mesActual === 0 ? 11 : mesActual - 1;
 
@@ -306,7 +305,6 @@
             document.getElementById('label-mes-anterior').innerText = nombresMeses[mesAnteriorIndex];
             document.getElementById('val-mes-anterior').innerText = `L. ${ingresosMesAnterior.toFixed(2)}`;
 
-            // Calcular porcentajes visuales para las barras
             let maxTotal = Math.max(ingresosMes, ingresosMesAnterior, 1);
             let porcActual = (ingresosMes / maxTotal) * 100;
             let porcAnterior = (ingresosMesAnterior / maxTotal) * 100;
