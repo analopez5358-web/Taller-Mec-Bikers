@@ -126,7 +126,7 @@
             </div>
         </section>
 
-        <!-- SECCIÓN 3: REGISTRO DE NUEVA ORDEN -->
+        <!-- SECCIÓN 3: REGISTRO DE NUEVA ORDEN (SIN COSTO INICIAL) -->
         <section id="seccion-ordenes" class="hidden space-y-6">
             <div class="bg-white p-6 rounded-lg shadow-md max-w-2xl mx-auto">
                 <h2 class="text-lg font-semibold mb-4 text-gray-700">Nueva Orden de Ingreso y Asignación</h2>
@@ -147,11 +147,7 @@
                         <label class="block text-sm font-medium text-gray-600">Placa</label>
                         <input type="text" id="placa" required class="w-full mt-1 p-2 border rounded-md focus:ring focus:ring-blue-300">
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-600">Costo Estimado / Total (Lempiras)</label>
-                        <input type="number" id="costo" step="0.01" required class="w-full mt-1 p-2 border rounded-md focus:ring focus:ring-blue-300" placeholder="0.00">
-                    </div>
-                    <div>
+                    <div class="md:col-span-2">
                         <label class="block text-sm font-medium text-gray-600">Asignar a:</label>
                         <select id="trabajador-asignado" class="w-full mt-1 p-2 border rounded-md focus:ring focus:ring-blue-300 bg-white">
                             <option value="Taller / General">Taller Principal (General)</option>
@@ -173,7 +169,6 @@
     </div>
 
     <script>
-        // URL de tu Aplicación Web de Google Apps Script
         const URL_WEB_APP = "https://script.google.com/macros/s/AKfycbzPRC_BLo_nkWM4B0ZJiX-Q6nJ3bbS5SUeg1GdzVwJBcfyz_tufTyc9RnYoCpM7JeMxDw/exec";
         
         let seccionActivaDesplegable = null;
@@ -285,8 +280,11 @@
                             <h3 class="font-bold text-lg mt-1">${orden.moto} (Placa: ${orden.placa})</h3>
                             <p class="text-sm text-gray-600"><strong>Cliente:</strong> ${orden.cliente} - 📱 ${orden.telefono}</p>
                             <p class="text-sm text-gray-700 mt-1"><strong>Trabajo:</strong> ${orden.falla}</p>
-                            <p class="text-sm text-gray-800 mt-1"><strong>Costo:</strong> L. ${costoNum.toFixed(2)}</p>
-                            <span class="text-xs text-gray-400">Ingreso: ${orden.fecha}</span>
+                            <div class="mt-2 flex items-center gap-2">
+                                <span class="text-sm font-bold text-gray-800">Costo: L. <span id="costo-txt-${orden.id}">${costoNum.toFixed(2)}</span></span>
+                                <button onclick="actualizarCostoPrompt('${orden.id}', ${costoNum})" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition font-semibold">✏️ Modificar Costo</button>
+                            </div>
+                            <span class="text-xs text-gray-400 block mt-1">Ingreso: ${orden.fecha}</span>
                         </div>
                         <div class="flex flex-col gap-2 w-full md:w-auto">
                             <button onclick="cambiarEstado('${orden.id}')" class="bg-yellow-500 text-white px-3 py-1.5 rounded text-sm hover:bg-yellow-600 transition">Avanzar Estado</button>
@@ -312,6 +310,7 @@
             contenedor.innerHTML = '';
             asignaciones.forEach(orden => {
                 let badgeColor = orden.estado === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' : (orden.estado === 'En Reparación' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800');
+                let costoNum = parseFloat(orden.costo) || 0;
 
                 contenedor.innerHTML += `
                     <div class="border p-4 rounded-lg flex flex-col md:flex-row justify-between items-start md:items-center bg-amber-50/40 gap-4">
@@ -320,7 +319,11 @@
                             <h3 class="font-bold text-lg mt-1">${orden.moto} (Placa: ${orden.placa})</h3>
                             <p class="text-sm text-gray-600"><strong>Cliente:</strong> ${orden.cliente} - 📱 ${orden.telefono}</p>
                             <p class="text-sm text-gray-800 mt-1 font-medium"><strong>Tarea Asignada:</strong> ${orden.falla}</p>
-                            <span class="text-xs text-gray-400">Ingreso: ${orden.fecha}</span>
+                            <div class="mt-2 flex items-center gap-2">
+                                <span class="text-sm font-bold text-gray-800">Costo: L. ${costoNum.toFixed(2)}</span>
+                                <button onclick="actualizarCostoPrompt('${orden.id}', ${costoNum})" class="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded hover:bg-amber-200 transition font-semibold">✏️ Modificar Costo</button>
+                            </div>
+                            <span class="text-xs text-gray-400 block mt-1">Ingreso: ${orden.fecha}</span>
                         </div>
                         <div class="flex flex-col gap-2 w-full md:w-auto">
                             <button onclick="cambiarEstado('${orden.id}')" class="bg-amber-600 text-white px-3 py-1.5 rounded text-sm hover:bg-amber-700 transition font-semibold">Avanzar Estado</button>
@@ -339,7 +342,7 @@
                 telefono: document.getElementById('telefono').value,
                 moto: document.getElementById('moto').value,
                 placa: document.getElementById('placa').value.toUpperCase(),
-                costo: parseFloat(document.getElementById('costo').value) || 0,
+                costo: 0, // Inicia en 0 para agregarlo después
                 asignado: document.getElementById('trabajador-asignado').value,
                 falla: document.getElementById('falla').value,
                 estado: 'Pendiente',
@@ -363,6 +366,34 @@
             })
             .catch(err => console.error("Error al guardar:", err));
         });
+
+        function actualizarCostoPrompt(id, costoActual) {
+            let nuevoCostoStr = prompt("Ingrese el costo total o actualizado (Lempiras):", costoActual);
+            if (nuevoCostoStr !== null) {
+                let nuevoCosto = parseFloat(nuevoCostoStr);
+                if (isNaN(nuevoCosto) || nuevoCosto < 0) {
+                    alert("Por favor ingrese un número válido.");
+                    return;
+                }
+
+                fetch(URL_WEB_APP, {
+                    method: 'POST',
+                    body: JSON.stringify({ accion: 'actualizarCosto', id: id, costo: nuevoCosto })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    ordenesGlobales = data || [];
+                    actualizarDashboard();
+                    if (seccionActivaDesplegable) {
+                        mostrarContenidoDesplegable(seccionActivaDesplegable);
+                    }
+                    if (!document.getElementById('seccion-trabajador').classList.contains('hidden')) {
+                        mostrarAsignacionesTrabajador();
+                    }
+                })
+                .catch(err => console.error("Error al actualizar costo:", err));
+            }
+        }
 
         function cambiarEstado(id) {
             fetch(URL_WEB_APP, {
