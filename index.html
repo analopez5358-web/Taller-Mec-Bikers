@@ -173,13 +173,33 @@
     </div>
 
     <script>
+        // URL de tu Aplicación Web de Google Apps Script ya integrada
+        const URL_WEB_APP = "https://script.google.com/macros/s/AKfycbzH4eUctTpzq5pyYtIp2Cy5ZJ-8uuCrTQgKDU5HsJGYYNJ8uWYVbT2yDi0mbuGhkIYYew/exec";
+        
+        let seccionActivaDesplegable = null;
+        let ordenesGlobales = [];
+
         document.getElementById('fecha-actual').innerText = new Date().toLocaleDateString('es-HN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-        let seccionActivaDesplegable = null;
-
         document.addEventListener('DOMContentLoaded', () => {
-            actualizarDashboard();
+            cargarDatosYActualizar();
         });
+
+        function cargarDatosYActualizar() {
+            fetch(`${URL_WEB_APP}?accion=obtener`)
+                .then(res => res.json())
+                .then(data => {
+                    ordenesGlobales = data || [];
+                    actualizarDashboard();
+                    if (seccionActivaDesplegable) {
+                        mostrarContenidoDesplegable(seccionActivaDesplegable);
+                    }
+                    if (!document.getElementById('seccion-trabajador').classList.contains('hidden')) {
+                        mostrarAsignacionesTrabajador();
+                    }
+                })
+                .catch(err => console.error("Error al cargar datos:", err));
+        }
 
         function cambiarSeccion(seccion) {
             const secDashboard = document.getElementById('seccion-dashboard');
@@ -190,12 +210,10 @@
             const btnTrab = document.getElementById('btn-trabajador');
             const btnOrd = document.getElementById('btn-ordenes');
 
-            // Ocultar todas
             secDashboard.classList.add('hidden');
             secTrabajador.classList.add('hidden');
             secOrdenes.classList.add('hidden');
 
-            // Resetear estilos botones
             btnDash.className = "px-3 py-2 rounded-md font-semibold text-sm text-white hover:bg-blue-600 transition";
             btnTrab.className = "px-3 py-2 rounded-md font-semibold text-sm text-white hover:bg-blue-600 transition";
             btnOrd.className = "px-3 py-2 rounded-md font-semibold text-sm text-white hover:bg-blue-600 transition";
@@ -235,17 +253,16 @@
         }
 
         function mostrarContenidoDesplegable(tipo) {
-            let ordenes = JSON.parse(localStorage.getItem('taller_ordenes')) || [];
             const contenedor = document.getElementById('lista-desplegable');
             const titulo = document.getElementById('titulo-desplegable');
 
             let filtradas = [];
             if (tipo === 'reparacion') {
                 titulo.innerText = "🔧 Motos en Proceso de Reparación / Pendientes";
-                filtradas = ordenes.filter(o => o.estado === 'Pendiente' || o.estado === 'En Reparación');
+                filtradas = ordenesGlobales.filter(o => o.estado === 'Pendiente' || o.estado === 'En Reparación');
             } else {
                 titulo.innerText = "✅ Motos Listas para Entregar";
-                filtradas = ordenes.filter(o => o.estado === 'Lista para Entregar');
+                filtradas = ordenesGlobales.filter(o => o.estado === 'Lista para Entregar');
             }
 
             if (filtradas.length === 0) {
@@ -258,6 +275,8 @@
                 let badgeColor = orden.estado === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800';
                 if (orden.estado === 'Lista para Entregar') badgeColor = 'bg-green-100 text-green-800';
 
+                let costoNum = parseFloat(orden.costo) || 0;
+
                 contenedor.innerHTML += `
                     <div class="border p-4 rounded-lg flex flex-col md:flex-row justify-between items-start md:items-center bg-gray-50 gap-4">
                         <div>
@@ -266,12 +285,12 @@
                             <h3 class="font-bold text-lg mt-1">${orden.moto} (Placa: ${orden.placa})</h3>
                             <p class="text-sm text-gray-600"><strong>Cliente:</strong> ${orden.cliente} - 📱 ${orden.telefono}</p>
                             <p class="text-sm text-gray-700 mt-1"><strong>Trabajo:</strong> ${orden.falla}</p>
-                            <p class="text-sm text-gray-800 mt-1"><strong>Costo:</strong> L. ${orden.costo.toFixed(2)}</p>
+                            <p class="text-sm text-gray-800 mt-1"><strong>Costo:</strong> L. ${costoNum.toFixed(2)}</p>
                             <span class="text-xs text-gray-400">Ingreso: ${orden.fecha}</span>
                         </div>
                         <div class="flex flex-col gap-2 w-full md:w-auto">
-                            <button onclick="cambiarEstado(${orden.id})" class="bg-yellow-500 text-white px-3 py-1.5 rounded text-sm hover:bg-yellow-600 transition">Avanzar Estado</button>
-                            <button onclick="eliminarOrden(${orden.id})" class="bg-red-500 text-white px-3 py-1.5 rounded text-sm hover:bg-red-600 transition">Eliminar</button>
+                            <button onclick="cambiarEstado('${orden.id}')" class="bg-yellow-500 text-white px-3 py-1.5 rounded text-sm hover:bg-yellow-600 transition">Avanzar Estado</button>
+                            <button onclick="eliminarOrden('${orden.id}')" class="bg-red-500 text-white px-3 py-1.5 rounded text-sm hover:bg-red-600 transition">Eliminar</button>
                         </div>
                     </div>
                 `;
@@ -279,12 +298,10 @@
         }
 
         function mostrarAsignacionesTrabajador() {
-            let ordenes = JSON.parse(localStorage.getItem('taller_ordenes')) || [];
             const contenedor = document.getElementById('lista-trabajador');
             const contador = document.getElementById('contador-tareas-trabajador');
 
-            // Filtrar únicamente las asignadas al 2do trabajador y que sigan activas (no entregadas)
-            let asignaciones = ordenes.filter(o => o.asignado === '2do Trabajador');
+            let asignaciones = ordenesGlobales.filter(o => o.asignado === '2do Trabajador');
             contador.innerText = asignaciones.length;
 
             if (asignaciones.length === 0) {
@@ -306,7 +323,7 @@
                             <span class="text-xs text-gray-400">Ingreso: ${orden.fecha}</span>
                         </div>
                         <div class="flex flex-col gap-2 w-full md:w-auto">
-                            <button onclick="cambiarEstado(${orden.id})" class="bg-amber-600 text-white px-3 py-1.5 rounded text-sm hover:bg-amber-700 transition font-semibold">Avanzar Estado</button>
+                            <button onclick="cambiarEstado('${orden.id}')" class="bg-amber-600 text-white px-3 py-1.5 rounded text-sm hover:bg-amber-700 transition font-semibold">Avanzar Estado</button>
                         </div>
                     </div>
                 `;
@@ -317,7 +334,7 @@
             e.preventDefault();
 
             const nuevaOrden = {
-                id: Date.now(),
+                id: Date.now().toString(),
                 cliente: document.getElementById('cliente').value,
                 telefono: document.getElementById('telefono').value,
                 moto: document.getElementById('moto').value,
@@ -330,67 +347,83 @@
                 fecha: new Date().toLocaleDateString('es-HN')
             };
 
-            let ordenes = JSON.parse(localStorage.getItem('taller_ordenes')) || [];
-            ordenes.push(nuevaOrden);
-            localStorage.setItem('taller_ordenes', JSON.stringify(ordenes));
-
-            document.getElementById('form-orden').reset();
-            actualizarDashboard();
-            cambiarSeccion('dashboard');
-            
-            if (seccionActivaDesplegable) {
-                mostrarContenidoDesplegable(seccionActivaDesplegable);
-            }
+            fetch(URL_WEB_APP, {
+                method: 'POST',
+                body: JSON.stringify({ accion: 'guardar', orden: nuevaOrden })
+            })
+            .then(res => res.json())
+            .then(data => {
+                ordenesGlobales = data || [];
+                document.getElementById('form-orden').reset();
+                actualizarDashboard();
+                cambiarSeccion('dashboard');
+                if (seccionActivaDesplegable) {
+                    mostrarContenidoDesplegable(seccionActivaDesplegable);
+                }
+            })
+            .catch(err => console.error("Error al guardar:", err));
         });
 
         function cambiarEstado(id) {
-            let ordenes = JSON.parse(localStorage.getItem('taller_ordenes')) || [];
-            ordenes = ordenes.map(orden => {
-                if (orden.id === id) {
-                    if (orden.estado === 'Pendiente') orden.estado = 'En Reparación';
-                    else if (orden.estado === 'En Reparación') orden.estado = 'Lista para Entregar';
-                    else if (orden.estado === 'Lista para Entregar') orden.estado = 'Pendiente';
-                }
-                return orden;
-            });
-            localStorage.setItem('taller_ordenes', JSON.stringify(ordenes));
-            actualizarDashboard();
-            if (seccionActivaDesplegable) {
-                mostrarContenidoDesplegable(seccionActivaDesplegable);
-            }
-            // Si está activa la vista del trabajador, actualizarla también
-            if (!document.getElementById('seccion-trabajador').classList.contains('hidden')) {
-                mostrarAsignacionesTrabajador();
-            }
-        }
-
-        function eliminarOrden(id) {
-            if (confirm('¿Estás seguro de eliminar esta orden?')) {
-                let ordenes = JSON.parse(localStorage.getItem('taller_ordenes')) || [];
-                ordenes = ordenes.filter(orden => orden.id !== id);
-                localStorage.setItem('taller_ordenes', JSON.stringify(ordenes));
+            fetch(URL_WEB_APP, {
+                method: 'POST',
+                body: JSON.stringify({ accion: 'cambiarEstado', id: id })
+            })
+            .then(res => res.json())
+            .then(data => {
+                ordenesGlobales = data || [];
                 actualizarDashboard();
                 if (seccionActivaDesplegable) {
                     mostrarContenidoDesplegable(seccionActivaDesplegable);
                 }
+                if (!document.getElementById('seccion-trabajador').classList.contains('hidden')) {
+                    mostrarAsignacionesTrabajador();
+                }
+            })
+            .catch(err => console.error("Error al cambiar estado:", err));
+        }
+
+        function eliminarOrden(id) {
+            if (confirm('¿Estás seguro de eliminar esta orden?')) {
+                fetch(URL_WEB_APP, {
+                    method: 'POST',
+                    body: JSON.stringify({ accion: 'eliminar', id: id })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    ordenesGlobales = data || [];
+                    actualizarDashboard();
+                    if (seccionActivaDesplegable) {
+                        mostrarContenidoDesplegable(seccionActivaDesplegable);
+                    }
+                })
+                .catch(err => console.error("Error al eliminar:", err));
             }
         }
 
         function reiniciarSistema() {
             if (confirm('⚠️ ¿Estás seguro de borrar todas las órdenes y reiniciar los contadores a cero?')) {
-                localStorage.removeItem('taller_ordenes');
-                seccionActivaDesplegable = null;
-                document.getElementById('contenedor-desplegable').classList.add('hidden');
-                actualizarDashboard();
-                if (!document.getElementById('seccion-trabajador').classList.contains('hidden')) {
-                    mostrarAsignacionesTrabajador();
-                }
-                alert('Sistema reiniciado con éxito.');
+                fetch(URL_WEB_APP, {
+                    method: 'POST',
+                    body: JSON.stringify({ accion: 'reiniciar' })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    ordenesGlobales = data || [];
+                    seccionActivaDesplegable = null;
+                    document.getElementById('contenedor-desplegable').classList.add('hidden');
+                    actualizarDashboard();
+                    if (!document.getElementById('seccion-trabajador').classList.contains('hidden')) {
+                        mostrarAsignacionesTrabajador();
+                    }
+                    alert('Sistema reiniciado con éxito.');
+                })
+                .catch(err => console.error("Error al reiniciar:", err));
             }
         }
 
         function actualizarDashboard() {
-            let ordenes = JSON.parse(localStorage.getItem('taller_ordenes')) || [];
+            let ordenes = ordenesGlobales;
             
             const hoyStr = new Date().toISOString().split('T')[0];
             const fechaActualObj = new Date();
@@ -413,18 +446,19 @@
                 if (orden.fechaIso) {
                     const fechaOrden = new Date(orden.fechaIso);
                     const ordenDiaStr = orden.fechaIso.split('T')[0];
+                    let costoVal = parseFloat(orden.costo) || 0;
 
                     if (ordenDiaStr === hoyStr) {
-                        ingresosHoy += orden.costo;
+                        ingresosHoy += costoVal;
                     }
 
                     if (fechaOrden.getMonth() === mesActual && fechaOrden.getFullYear() === anioActual) {
-                        ingresosMes += orden.costo;
+                        ingresosMes += costoVal;
                     } else if (
                         (fechaOrden.getMonth() === mesActual - 1 && fechaOrden.getFullYear() === anioActual) ||
                         (mesActual === 0 && fechaOrden.getMonth() === 11 && fechaOrden.getFullYear() === anioActual - 1)
                     ) {
-                        ingresosMesAnterior += orden.costo;
+                        ingresosMesAnterior += costoVal;
                     }
                 }
             });
