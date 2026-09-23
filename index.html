@@ -30,14 +30,29 @@
             
             <!-- Tarjetas de Indicadores -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white p-5 rounded-lg shadow-md border-l-4 border-green-500">
-                    <p class="text-sm text-gray-500 font-medium">Ingresos de Hoy</p>
-                    <p id="stat-ingresos-hoy" class="text-2xl font-bold text-gray-800 mt-1">L. 0.00</p>
+                <!-- Ingresos de Hoy (Con desplegable) -->
+                <div onclick="toggleDesplegableIngresos('hoy')" class="bg-white p-5 rounded-lg shadow-md border-l-4 border-green-500 cursor-pointer hover:bg-green-50 transition">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-sm text-gray-500 font-medium">Ingresos de Hoy (Ver)</p>
+                            <p id="stat-ingresos-hoy" class="text-2xl font-bold text-gray-800 mt-1">L. 0.00</p>
+                        </div>
+                        <span id="flecha-ingresos-hoy" class="text-gray-400 font-bold text-lg">▼</span>
+                    </div>
                 </div>
-                <div class="bg-white p-5 rounded-lg shadow-md border-l-4 border-blue-500">
-                    <p class="text-sm text-gray-500 font-medium">Ingresos del Mes</p>
-                    <p id="stat-ingresos-mes" class="text-2xl font-bold text-gray-800 mt-1">L. 0.00</p>
+
+                <!-- Ingresos del Mes (Con desplegable) -->
+                <div onclick="toggleDesplegableIngresos('mes')" class="bg-white p-5 rounded-lg shadow-md border-l-4 border-blue-500 cursor-pointer hover:bg-blue-50 transition">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-sm text-gray-500 font-medium">Ingresos del Mes (Ver)</p>
+                            <p id="stat-ingresos-mes" class="text-2xl font-bold text-gray-800 mt-1">L. 0.00</p>
+                        </div>
+                        <span id="flecha-ingresos-mes" class="text-gray-400 font-bold text-lg">▼</span>
+                    </div>
                 </div>
+
+                <!-- En Reparación -->
                 <div onclick="toggleDesplegable('reparacion')" class="bg-white p-5 rounded-lg shadow-md border-l-4 border-yellow-500 cursor-pointer hover:bg-yellow-50 transition">
                     <div class="flex justify-between items-center">
                         <div>
@@ -47,6 +62,8 @@
                         <span id="flecha-reparacion" class="text-gray-400 font-bold text-lg">▼</span>
                     </div>
                 </div>
+
+                <!-- Listos para Entregar -->
                 <div onclick="toggleDesplegable('listos')" class="bg-white p-5 rounded-lg shadow-md border-l-4 border-purple-500 cursor-pointer hover:bg-purple-50 transition">
                     <div class="flex justify-between items-center">
                         <div>
@@ -126,7 +143,7 @@
             </div>
         </section>
 
-        <!-- SECCIÓN 3: REGISTRO DE NUEVA ORDEN (SIN COSTO INICIAL) -->
+        <!-- SECCIÓN 3: REGISTRO DE NUEVA ORDEN -->
         <section id="seccion-ordenes" class="hidden space-y-6">
             <div class="bg-white p-6 rounded-lg shadow-md max-w-2xl mx-auto">
                 <h2 class="text-lg font-semibold mb-4 text-gray-700">Nueva Orden de Ingreso y Asignación</h2>
@@ -187,7 +204,11 @@
                     ordenesGlobales = data || [];
                     actualizarDashboard();
                     if (seccionActivaDesplegable) {
-                        mostrarContenidoDesplegable(seccionActivaDesplegable);
+                        if (seccionActivaDesplegable === 'hoy' || seccionActivaDesplegable === 'mes') {
+                            mostrarContenidoDesplegableIngresos(seccionActivaDesplegable);
+                        } else {
+                            mostrarContenidoDesplegable(seccionActivaDesplegable);
+                        }
                     }
                     if (!document.getElementById('seccion-trabajador').classList.contains('hidden')) {
                         mostrarAsignacionesTrabajador();
@@ -231,9 +252,13 @@
             const contenedor = document.getElementById('contenedor-desplegable');
             const flechaRep = document.getElementById('flecha-reparacion');
             const flechaList = document.getElementById('flecha-listos');
+            const flechaHoy = document.getElementById('flecha-ingresos-hoy');
+            const flechaMes = document.getElementById('flecha-ingresos-mes');
 
             flechaRep.innerText = '▼';
             flechaList.innerText = '▼';
+            flechaHoy.innerText = '▼';
+            flechaMes.innerText = '▼';
 
             if (seccionActivaDesplegable === tipo) {
                 contenedor.classList.add('hidden');
@@ -244,6 +269,30 @@
                 if (tipo === 'reparacion') flechaRep.innerText = '▲';
                 else flechaList.innerText = '▲';
                 mostrarContenidoDesplegable(tipo);
+            }
+        }
+
+        function toggleDesplegableIngresos(tipo) {
+            const contenedor = document.getElementById('contenedor-desplegable');
+            const flechaRep = document.getElementById('flecha-reparacion');
+            const flechaList = document.getElementById('flecha-listos');
+            const flechaHoy = document.getElementById('flecha-ingresos-hoy');
+            const flechaMes = document.getElementById('flecha-ingresos-mes');
+
+            flechaRep.innerText = '▼';
+            flechaList.innerText = '▼';
+            flechaHoy.innerText = '▼';
+            flechaMes.innerText = '▼';
+
+            if (seccionActivaDesplegable === tipo) {
+                contenedor.classList.add('hidden');
+                seccionActivaDesplegable = null;
+            } else {
+                contenedor.classList.remove('hidden');
+                seccionActivaDesplegable = tipo;
+                if (tipo === 'hoy') flechaHoy.innerText = '▲';
+                else flechaMes.innerText = '▲';
+                mostrarContenidoDesplegableIngresos(tipo);
             }
         }
 
@@ -260,6 +309,40 @@
                 filtradas = ordenesGlobales.filter(o => o.estado === 'Lista para Entregar');
             }
 
+            renderizarListaMotos(filtradas, contenedor);
+        }
+
+        function mostrarContenidoDesplegableIngresos(tipo) {
+            const contenedor = document.getElementById('lista-desplegable');
+            const titulo = document.getElementById('titulo-desplegable');
+
+            const hoyStr = new Date().toISOString().split('T')[0];
+            const fechaActualObj = new Date();
+            const mesActual = fechaActualObj.getMonth();
+            const anioActual = fechaActualObj.getFullYear();
+
+            let filtradas = [];
+            if (tipo === 'hoy') {
+                titulo.innerText = "💵 Detalle de Ingresos de Hoy";
+                filtradas = ordenesGlobales.filter(o => {
+                    if (!o.fechaIso) return false;
+                    let costoVal = parseFloat(o.costo) || 0;
+                    return o.fechaIso.split('T')[0] === hoyStr && costoVal > 0;
+                });
+            } else {
+                titulo.innerText = "📅 Detalle de Ingresos del Mes";
+                filtradas = ordenesGlobales.filter(o => {
+                    if (!o.fechaIso) return false;
+                    const fechaOrden = new Date(o.fechaIso);
+                    let costoVal = parseFloat(o.costo) || 0;
+                    return fechaOrden.getMonth() === mesActual && fechaOrden.getFullYear() === anioActual && costoVal > 0;
+                });
+            }
+
+            renderizarListaMotos(filtradas, contenedor);
+        }
+
+        function renderizarListaMotos(filtradas, contenedor) {
             if (filtradas.length === 0) {
                 contenedor.innerHTML = `<p class="text-gray-500 text-center py-2">No hay registros en esta categoría.</p>`;
                 return;
@@ -267,9 +350,7 @@
 
             contenedor.innerHTML = '';
             filtradas.forEach(orden => {
-                let badgeColor = orden.estado === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800';
-                if (orden.estado === 'Lista para Entregar') badgeColor = 'bg-green-100 text-green-800';
-
+                let badgeColor = orden.estado === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' : (orden.estado === 'En Reparación' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800');
                 let costoNum = parseFloat(orden.costo) || 0;
 
                 contenedor.innerHTML += `
@@ -342,7 +423,7 @@
                 telefono: document.getElementById('telefono').value,
                 moto: document.getElementById('moto').value,
                 placa: document.getElementById('placa').value.toUpperCase(),
-                costo: 0, // Inicia en 0 para agregarlo después
+                costo: 0,
                 asignado: document.getElementById('trabajador-asignado').value,
                 falla: document.getElementById('falla').value,
                 estado: 'Pendiente',
@@ -361,7 +442,11 @@
                 actualizarDashboard();
                 cambiarSeccion('dashboard');
                 if (seccionActivaDesplegable) {
-                    mostrarContenidoDesplegable(seccionActivaDesplegable);
+                    if (seccionActivaDesplegable === 'hoy' || seccionActivaDesplegable === 'mes') {
+                        mostrarContenidoDesplegableIngresos(seccionActivaDesplegable);
+                    } else {
+                        mostrarContenidoDesplegable(seccionActivaDesplegable);
+                    }
                 }
             })
             .catch(err => console.error("Error al guardar:", err));
@@ -385,7 +470,11 @@
                     ordenesGlobales = data || [];
                     actualizarDashboard();
                     if (seccionActivaDesplegable) {
-                        mostrarContenidoDesplegable(seccionActivaDesplegable);
+                        if (seccionActivaDesplegable === 'hoy' || seccionActivaDesplegable === 'mes') {
+                            mostrarContenidoDesplegableIngresos(seccionActivaDesplegable);
+                        } else {
+                            mostrarContenidoDesplegable(seccionActivaDesplegable);
+                        }
                     }
                     if (!document.getElementById('seccion-trabajador').classList.contains('hidden')) {
                         mostrarAsignacionesTrabajador();
@@ -405,7 +494,11 @@
                 ordenesGlobales = data || [];
                 actualizarDashboard();
                 if (seccionActivaDesplegable) {
-                    mostrarContenidoDesplegable(seccionActivaDesplegable);
+                    if (seccionActivaDesplegable === 'hoy' || seccionActivaDesplegable === 'mes') {
+                        mostrarContenidoDesplegableIngresos(seccionActivaDesplegable);
+                    } else {
+                        mostrarContenidoDesplegable(seccionActivaDesplegable);
+                    }
                 }
                 if (!document.getElementById('seccion-trabajador').classList.contains('hidden')) {
                     mostrarAsignacionesTrabajador();
@@ -425,7 +518,11 @@
                     ordenesGlobales = data || [];
                     actualizarDashboard();
                     if (seccionActivaDesplegable) {
-                        mostrarContenidoDesplegable(seccionActivaDesplegable);
+                        if (seccionActivaDesplegable === 'hoy' || seccionActivaDesplegable === 'mes') {
+                            mostrarContenidoDesplegableIngresos(seccionActivaDesplegable);
+                        } else {
+                            mostrarContenidoDesplegable(seccionActivaDesplegable);
+                        }
                     }
                 })
                 .catch(err => console.error("Error al eliminar:", err));
