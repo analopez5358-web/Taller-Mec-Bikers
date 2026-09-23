@@ -55,7 +55,7 @@
                 <div onclick="toggleDesplegable('listos')" class="bg-white p-5 rounded-lg shadow-md border-l-4 border-purple-500 cursor-pointer hover:bg-purple-50 transition">
                     <div class="flex justify-between items-center">
                         <div>
-                            <p class="text-sm text-gray-500 font-medium">Listos para Entregar (Ver)</p>
+                            <p class="text-sm text-gray-500 font-medium">Terminados (Ver)</p>
                             <p id="stat-listos" class="text-2xl font-bold text-gray-800 mt-1">0</p>
                         </div>
                         <span id="flecha-listos" class="text-gray-400 font-bold text-lg">▼</span>
@@ -117,8 +117,8 @@
             <div class="bg-white p-6 rounded-lg shadow-md">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b pb-4">
                     <div>
-                        <h2 class="text-xl font-bold text-gray-800">📁 Historial de Reparaciones Completadas</h2>
-                        <p class="text-sm text-gray-500">Registro histórico de motos entregadas, responsables, insumos y costos totales.</p>
+                        <h2 class="text-xl font-bold text-gray-800">📁 Historial de Reparaciones Terminadas</h2>
+                        <p class="text-sm text-gray-500">Registro histórico de motos terminadas, responsables, insumos y costos totales.</p>
                     </div>
                     <div class="bg-purple-100 text-purple-800 px-3 py-1.5 rounded-lg font-semibold text-sm">
                         Total Historial: <span id="contador-historial">0</span>
@@ -298,11 +298,11 @@
 
             let filtradas = [];
             if (tipo === 'reparacion') {
-                titulo.innerText = "🔧 Motos en Proceso de Reparación / Pendientes";
-                filtradas = ordenesGlobales.filter(o => o.estado === 'Pendiente' || o.estado === 'En Reparación');
+                titulo.innerText = "🔧 Motos en Reparación (Pendiente / En Proceso)";
+                filtradas = ordenesGlobales.filter(o => o.estado === 'Pendiente' || o.estado === 'En Proceso');
             } else {
-                titulo.innerText = "✅ Motos Listas para Entregar";
-                filtradas = ordenesGlobales.filter(o => o.estado === 'Lista para Entregar');
+                titulo.innerText = "✅ Motos Terminadas";
+                filtradas = ordenesGlobales.filter(o => o.estado === 'Terminado');
             }
 
             if (filtradas.length === 0) {
@@ -312,8 +312,9 @@
 
             contenedor.innerHTML = '';
             filtradas.forEach(orden => {
-                let badgeColor = orden.estado === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800';
-                if (orden.estado === 'Lista para Entregar') badgeColor = 'bg-green-100 text-green-800';
+                let badgeColor = 'bg-yellow-100 text-yellow-800';
+                if (orden.estado === 'En Proceso') badgeColor = 'bg-blue-100 text-blue-800';
+                if (orden.estado === 'Terminado') badgeColor = 'bg-green-100 text-green-800';
 
                 let costoNum = parseFloat(orden.costo) || 0;
 
@@ -325,15 +326,20 @@
                             <h3 class="font-bold text-lg mt-1">${orden.moto} (Placa: ${orden.placa})</h3>
                             <p class="text-sm text-gray-600"><strong>Cliente:</strong> ${orden.cliente} - 📱 ${orden.telefono}</p>
                             <p class="text-sm text-gray-700 mt-1"><strong>Trabajo:</strong> ${orden.falla}</p>
+                            <p class="text-sm text-gray-600 mt-1"><strong>📦 Insumos:</strong> ${orden.insumos || 'Ninguno'}</p>
                             <div class="mt-2 flex items-center gap-2">
                                 <span class="text-sm font-bold text-gray-800">Costo Total: L. <span id="costo-txt-${orden.id}">${costoNum.toFixed(2)}</span></span>
-                                <button onclick="gestionarInsumosYCostos('${orden.id}', ${costoNum})" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition font-semibold">🛠️ Gestionar Insumos / Costos</button>
+                                <button onclick="gestionarInsumosYCostos('${orden.id}', ${costoNum})" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition font-semibold">🛠️ Insumos / Costos</button>
                             </div>
                             <span class="text-xs text-gray-400 block mt-1">Ingreso: ${orden.fecha}</span>
                         </div>
                         <div class="flex flex-col gap-2 w-full md:w-auto">
-                            <button onclick="cambiarEstado('${orden.id}')" class="bg-yellow-500 text-white px-3 py-1.5 rounded text-sm hover:bg-yellow-600 transition">Avanzar Estado</button>
-                            <button onclick="eliminarOrden('${orden.id}')" class="bg-red-500 text-white px-3 py-1.5 rounded text-sm hover:bg-red-600 transition">Eliminar</button>
+                            <div class="flex gap-1">
+                                <button onclick="cambiarEstadoDirecto('${orden.id}', 'Pendiente')" class="bg-yellow-500 text-white px-2 py-1 rounded text-xs hover:bg-yellow-600 transition">Pendiente</button>
+                                <button onclick="cambiarEstadoDirecto('${orden.id}', 'En Proceso')" class="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600 transition">En Proceso</button>
+                                <button onclick="cambiarEstadoDirecto('${orden.id}', 'Terminado')" class="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700 transition">Terminado</button>
+                            </div>
+                            <button onclick="eliminarOrden('${orden.id}')" class="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 transition">Eliminar</button>
                         </div>
                     </div>
                 `;
@@ -344,12 +350,11 @@
             const contenedor = document.getElementById('lista-historial');
             const contador = document.getElementById('contador-historial');
 
-            // Historial muestra las que ya finalizaron o se consideran completas (puedes ajustar el criterio si deseas incluir 'Lista para Entregar')
-            let historial = ordenesGlobales.filter(o => o.estado === 'Entregada' || o.estado === 'Lista para Entregar');
+            let historial = ordenesGlobales.filter(o => o.estado === 'Terminado');
             contador.innerText = historial.length;
 
             if (historial.length === 0) {
-                contenedor.innerHTML = '<p class="text-gray-500 text-center py-6">No hay reparaciones en el historial todavía.</p>';
+                contenedor.innerHTML = '<p class="text-gray-500 text-center py-6">No hay reparaciones terminadas en el historial todavía.</p>';
                 return;
             }
 
@@ -361,7 +366,7 @@
                 contenedor.innerHTML += `
                     <div class="border p-4 rounded-lg flex flex-col md:flex-row justify-between items-start md:items-center bg-purple-50/40 gap-4">
                         <div>
-                            <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-semibold">${orden.estado}</span>
+                            <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-semibold">Terminado</span>
                             <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded font-semibold ml-1">👷 Realizado por: ${orden.asignado}</span>
                             <h3 class="font-bold text-lg mt-1">${orden.moto} (Placa: ${orden.placa})</h3>
                             <p class="text-sm text-gray-600"><strong>Cliente:</strong> ${orden.cliente} - 📱 ${orden.telefono}</p>
@@ -447,10 +452,10 @@
             }
         }
 
-        function cambiarEstado(id) {
+        function cambiarEstadoDirecto(id, nuevoEstado) {
             fetch(URL_WEB_APP, {
                 method: 'POST',
-                body: JSON.stringify({ accion: 'cambiarEstado', id: id })
+                body: JSON.stringify({ accion: 'cambiarEstadoDirecto', id: id, estado: nuevoEstado })
             })
             .then(res => res.json())
             .then(data => {
@@ -458,6 +463,9 @@
                 actualizarDashboard();
                 if (seccionActivaDesplegable) {
                     mostrarContenidoDesplegable(seccionActivaDesplegable);
+                }
+                if (!document.getElementById('seccion-historial').classList.contains('hidden')) {
+                    mostrarHistorial();
                 }
             })
             .catch(err => console.error("Error al cambiar estado:", err));
@@ -517,9 +525,9 @@
             let listos = 0;
 
             ordenes.forEach(orden => {
-                if (orden.estado === 'En Reparación' || orden.estado === 'Pendiente') {
+                if (orden.estado === 'Pendiente' || orden.estado === 'En Proceso') {
                     enReparacion++;
-                } else if (orden.estado === 'Lista para Entregar') {
+                } else if (orden.estado === 'Terminado') {
                     listos++;
                 }
 
